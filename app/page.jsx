@@ -20,7 +20,7 @@ export default function Page(){
   const [loading, setLoading]=useState(true)
   const [inCall, setInCall]=useState(false)
   const [camOn, setCamOn]=useState(false)
-  // PAS DE CASINO ICI - SUPPRIMÉ
+  const [betMessage, setBetMessage]=useState('')
   const videoRef=useRef(null)
 
   useEffect(()=>{ loadMatches('aujourd\'hui') },[])
@@ -35,7 +35,6 @@ export default function Page(){
   async function loadMatches(jour){
     setLoading(true)
     try{
-      // ESPN REAL MATCHES
       const res=await fetch(`/api/football?date=${getDateStr(jour)}`)
       const data=await res.json()
       setCorrespondances(data.matches || MOCK)
@@ -44,6 +43,16 @@ export default function Page(){
       setCorrespondances(MOCK)
     }
     setLoading(false)
+  }
+
+  function handlePari(match, choix){
+    if (pieces < 10) {
+      setBetMessage(`Tu n'as pas assez de pièces pour placer un pari.`)
+      return
+    }
+
+    setPieces(p => p - 10)
+    setBetMessage(`Pari validé : ${choix} sur ${match.teamA} vs ${match.teamB} (-10${lang.devise})`)
   }
 
   const MOCK=[
@@ -59,7 +68,6 @@ export default function Page(){
 
   return (
     <div style={{background:'#f8f7ff', minHeight:'100vh', fontFamily:'Inter, system-ui'}}>
-      {/* HEADER VIOLET */}
       <header style={{background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', padding:'14px 24px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:10}}>
           <span style={{background:'white', color:'#7c3aed', fontWeight:900, padding:'6px 12px', borderRadius:12, fontSize:20}}>PRONO</span>
@@ -67,34 +75,30 @@ export default function Page(){
         </div>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
           {LANGUES.map(l=>(
-            <button key={l.code} onClick={()=>setLang(l)} style={{border: lang.code===l.code?'2px solid white':'none', background:'rgba(255,255,255,0.2)', borderRadius:20, padding:'4px 8px'}}>{l.drapeau}</button>
+            <button key={l.code} onClick={()=>setLang(l)} style={{border: lang.code===l.code?'2px solid white':'none', background:'rgba(255,255,255,0.2)', borderRadius:20, padding:'4px 8px', color:'white', cursor:'pointer'}}>{l.drapeau}</button>
           ))}
           <span style={{background:'white', borderRadius:20, padding:'6px 14px', fontWeight:700}}>{pieces}{lang.devise}</span>
-          <button style={{background:'white', borderRadius:20, padding:'6px 14px', fontWeight:700, border:'none'}}>Boutique</button>
+          <button style={{background:'white', borderRadius:20, padding:'6px 14px', fontWeight:700, border:'none', cursor:'pointer'}}>Boutique</button>
         </div>
       </header>
 
-      {/* FILTRES JOURS */}
       <div style={{padding:'16px 24px', display:'flex', gap:8}}>
         {['hier','aujourd\'hui','demain'].map(d=>(
-          <button key={d} onClick={()=>{setDateSel(d); loadMatches(d)}} style={{background: dateSel===d?'#8b5cf6':'white', color: dateSel===d?'white':'#6b7280', border:'none', borderRadius:20, padding:'8px 18px', fontWeight:600, textTransform:'capitalize'}}>{d}</button>
+          <button key={d} onClick={()=>{setDateSel(d); loadMatches(d)}} style={{background: dateSel===d?'#8b5cf6':'white', color: dateSel===d?'white':'#6b7280', border:'none', borderRadius:20, padding:'8px 14px', fontWeight:700, cursor:'pointer'}}>{d}</button>
         ))}
       </div>
 
-      {/* FILTRES SPORTS */}
-      <div style={{padding:'0 24px 16px', display:'flex', gap:8}}>
+      <div style={{padding:'0 24px 16px', display:'flex', gap:8, flexWrap:'wrap'}}>
         {['tous','football','basket-ball','tennis','NFL'].map(s=>(
-          <button key={s} onClick={()=>setSport(s)} style={{background: sport===s?'black':'white', color: sport===s?'white':'#6b7280', border:'none', borderRadius:20, padding:'8px 18px', fontWeight:600, textTransform:'capitalize'}}>{s}</button>
+          <button key={s} onClick={()=>setSport(s)} style={{background: sport===s?'black':'white', color: sport===s?'white':'#6b7280', border:'none', borderRadius:20, padding:'8px 18px', fontWeight:700, cursor:'pointer'}}>{s}</button>
         ))}
       </div>
 
-      {/* LIVE BAR */}
       <div style={{margin:'0 24px', background:'white', borderRadius:16, padding:'12px 18px', display:'flex', justifyContent:'space-between', alignItems:'center', boxShadow:'0 1px 3px rgba(0,0,0,0.05)'}}>
-        <span style={{display:'flex', alignItems:'center', gap:8, fontWeight:600}}><span style={{width:8, height:8, background:'#22c55e', borderRadius:'50%', display:'inline-block'}}></span>{realCount || filtered.length} vrais matchs en direct</span>
-        <button onClick={()=>loadMatches(dateSel)} style={{background:'#8b5cf6', color:'white', border:'none', borderRadius:20, padding:'6px 14px', fontWeight:600}}>Actualiser</button>
+        <span style={{display:'flex', alignItems:'center', gap:8, fontWeight:600}}><span style={{width:8, height:8, background:'#22c55e', borderRadius:'50%', display:'inline-block'}}></span>{realCount} matchs</span>
+        <button onClick={()=>loadMatches(dateSel)} style={{background:'#8b5cf6', color:'white', border:'none', borderRadius:20, padding:'6px 14px', fontWeight:600, cursor:'pointer'}}>Actualiser</button>
       </div>
 
-      {/* GRILLE MATCHS */}
       <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, padding:24}}>
         <div style={{display:'flex', flexDirection:'column', gap:12}}>
           {loading ? <div>Chargement...</div> : filtered.map(m=>(
@@ -103,34 +107,56 @@ export default function Page(){
                 <span style={{fontSize:11, color:'#9ca3af', textTransform:'uppercase', fontWeight:700}}>{m.sport} • {m.time}</span>
                 <span style={{background: m.status==='LIVE'?'#dcfce7':'#f3f4f6', color: m.status==='LIVE'?'#16a34a':'#6b7280', padding:'2px 8px', borderRadius:10, fontSize:11, fontWeight:700}}>{m.status}</span>
               </div>
-              <div style={{fontSize:18, fontWeight:800, marginBottom:12}}>{m.teamA} - {m.teamB} {m.scoreA!==null && <span style={{background:'black', color:'white', padding:'2px 8px', borderRadius:8, marginLeft:8, fontSize:14}}>{m.scoreA} - {m.scoreB}</span>}</div>
-              <div style={{display:'flex', gap:8}}>
+              <div style={{fontSize:18, fontWeight:800, marginBottom:12}}>{m.teamA} - {m.teamB} {m.scoreA!==null && <span style={{background:'black', color:'white', padding:'2px 8px', borderRadius:8}}>{m.scoreA}-{m.scoreB}</span>}</div>
+              <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
                 {Object.entries(m.odds).map(([k,v])=>(
-                  <button key={k} onClick={()=>{ setPieces(p=>p-10); alert(`Pari ${k} sur ${m.teamA} vs ${m.teamB} ! -10${lang.devise}`)}} style={{flex:1, background:'#f8f7ff', border:'1px solid #e5e7eb', borderRadius:12, padding:'8px', fontWeight:700}}>{k} {v}</button>
+                  <button
+                    key={k}
+                    type='button'
+                    disabled={pieces < 10}
+                    onClick={()=>handlePari(m, k)}
+                    style={{
+                      flex:'1 1 110px',
+                      background:'#f8f7ff',
+                      border:'1px solid #e5e7eb',
+                      borderRadius:12,
+                      padding:'10px 12px',
+                      fontWeight:700,
+                      cursor: pieces < 10 ? 'not-allowed' : 'pointer',
+                      opacity: pieces < 10 ? 0.55 : 1,
+                      color:'#111827'
+                    }}
+                  >
+                    {k} • {v}
+                  </button>
                 ))}
               </div>
             </div>
           ))}
         </div>
 
-        {/* SIDEBAR */}
         <div style={{display:'flex', flexDirection:'column', gap:16}}>
           <div style={{background:'white', borderRadius:24, padding:18}}>
             <h3 style={{fontWeight:800, marginBottom:10}}>Ligues Amis</h3>
             <div style={{background:'#f8f7ff', borderRadius:12, padding:'8px 12px', fontWeight:700, color:'#7c3aed', marginBottom:8}}>PRONO-X7K9</div>
-            <button style={{width:'100%', background:'black', color:'white', borderRadius:12, padding:'10px', fontWeight:700, border:'none', marginBottom:8}}>Rejoindre</button>
-            <button style={{width:'100%', background:'#8b5cf6', color:'white', borderRadius:12, padding:'10px', fontWeight:700, border:'none'}}>Créer ligue</button>
+            <button style={{width:'100%', background:'black', color:'white', borderRadius:12, padding:'10px', fontWeight:700, border:'none', marginBottom:8, cursor:'pointer'}}>Rejoindre</button>
+            <button style={{width:'100%', background:'#8b5cf6', color:'white', borderRadius:12, padding:'10px', fontWeight:700, border:'none', cursor:'pointer'}}>Créer ligue</button>
           </div>
+
           <div style={{background:'white', borderRadius:24, padding:18}}>
             <h3 style={{fontWeight:800, marginBottom:10}}>Top Pronoers</h3>
             <div>1. Solal - 1250 pts 🏆</div>
             <div>2. Alex - 980 pts</div>
             <div>3. Max - 870 pts</div>
           </div>
+
+          {betMessage && (
+            <div style={{background:'#ecfdf5', border:'1px solid #a7f3d0', color:'#065f46', padding:'12px 14px', borderRadius:14, fontWeight:600}}>
+              {betMessage}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* PAS DE CASINO - SUPPRIMÉ DÉFINITIVEMENT */}
     </div>
   )
 }
