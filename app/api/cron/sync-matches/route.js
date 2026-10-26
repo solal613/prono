@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { syncMatchesForDate } from '../../../lib/matches-sync'
+import { syncMatchesForDate } from '../../../../lib/matches-sync'
 
 export async function GET(req) {
   const authHeader = req.headers.get('authorization') || ''
